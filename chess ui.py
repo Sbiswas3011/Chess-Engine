@@ -7,16 +7,24 @@ Created on Mon Feb  8 19:47:50 2021
 
 import pygame 
 from pygame.locals import *
-
+import copy
         
 class Pieces(pygame.sprite.Sprite):
-    def __init__(self,name,wPH,x,y,s):
+    
+    def __init__(self,name,wPH,x,y,s,color,piece):
         pygame.sprite.Sprite.__init__(self)
         self.name = name
         self.wPH = wPH
         self.x = x
         self.y = y
         self.s = s
+        self.color=color
+        self.piece=piece
+        
+    def change_piece(self,img,color,piece):
+        self.wPH=img
+        self.color=color
+        self.piece=piece
       
     def update_setup(self):
         self.s.blit(self.wPH,(self.x,self.y))
@@ -24,25 +32,600 @@ class Pieces(pygame.sprite.Sprite):
     def updateloc(self,x,y):
         self.s.blit(self.wPH,(x,y))
         
+    def updateloc_permanent(self,x,y):
+        self.x=x
+        self.y=y
+        
     def check_pos(self, alpha, num, mouse):
         position=alpha.get(int(self.x/60))+num.get(int(self.y/60))
         if mouse[0]>=self.x and mouse[0]<=self.x+60 and mouse[1]>=self.y and mouse[1]<=self.y+60 :
-            print(self.name,"at",position)
+            #print(self.name,"at",position)
             
             return self.name  
         
+    def get_square(self,alpha,num):
+        position=alpha.get(int(self.x/60))+num.get(int(self.y/60))
+        return position
+                
     def get_pos(self):
         return (self.x,self.y)
- 
-def whiteking(items,newx,newy):
     
-        
-        
-        
-        
-      
+    def get_color(self):
+        return self.color
+    
+    def get_piece(self):
+        return self.piece
+    
+    def get_name(self):
+        return self.name
+ 
+    
+class CheckMove(object):
+    
+    def __init__(self,items,newx,newy,color,piece,pos_table,wboardstate,bboardstate):
+        self.items=items
+        self.newx=newx
+        self.newy=newy
+        self.color=color
+        self.piece=piece
+        self.pos_table=pos_table
+        self.wboardstate=wboardstate
+        self.bboardstate=bboardstate
+        self.columns=["A","B","C","D","E","F","G","H"]
+        self.rows=["1","2","3","4","5","6","7","8"]
+        #if self.piece=="K":
+            #self.king()
             
+    def get_moves(self):
+        moves=[]
+        #print(self.newx,self.newy)
+        if self.piece=="K":
+            moves=self.King()
+        elif self.piece=="Q":
+            moves=self.Queen()
+        elif self.piece=="B":
+            moves=self.Bishop()
+        elif self.piece=="N":
+            moves=self.Knight()
+        elif self.piece=="R":
+            moves=self.Rook()
+        elif self.piece=="P":   
+            moves=self.Pawn_attack()
+        
+        return moves
+        
+            
+    def King(self):
+        square=""
+        for k,v in self.pos_table.items():
+            if v==(self.newx,self.newy):
+                square=k
+                break
+        posibilityspace=[]
+        #print(square)
+        col=square[0:1]
+        row=square[1:2]
+        col_index=self.columns.index(col)
+        row_index=self.rows.index(row)
+        orig_col=copy.deepcopy(col_index)
+        orig_row=copy.deepcopy(row_index)
+        col_index-=1
+        row_index-=1
+        for i in range(3):
+            for j in range(3):
+                if col_index==-1 or col_index==8 or row_index==-1 or row_index==8 or col_index==orig_col and row_index==orig_row:
+                    row_index+=1
+                    continue
+                else:
+                    posibilityspace.append(self.columns[col_index]+self.rows[row_index])
+                    row_index+=1
+            col_index+=1
+            row_index-=3
+        if self.color=="W":    
+            c = [x for x in posibilityspace if x not in self.wboardstate]
+            return c
+        elif self.color=="B":
+            c = [x for x in posibilityspace if x not in self.bboardstate]
+            return c
+        
+    def Queen(self):
+        square=""
+        for k,v in self.pos_table.items():
+            if v==(self.newx,self.newy):
+                square=k
+                break
+    
+        col=square[0:1]
+        row=square[1:2]
+        #print(col,row)
+        col_index=self.columns.index(col)
+        row_index=self.rows.index(row)
+        orig_col=copy.deepcopy(col_index)
+        orig_row=copy.deepcopy(row_index)
+        
+        boardst=[self.wboardstate,self.bboardstate]
+        if self.color=="W":
+            boardst=boardst
+        else:
+            boardst.reverse()
+            
+        run=True
+        iterator=1
+        leftbegin=[]
+        rightbegin=[]
+        
+        downl=0
+        upl=0
+        downr=0
+        upr=0
+        
+        while run:
+            if downl==0 and (col_index-iterator<0 or row_index-iterator<0):
+                downl=1
+            elif downl==0 and self.columns[col_index-iterator]+self.rows[row_index-iterator] in boardst[0]:
+                downl=1
+            elif downl==0 and self.columns[col_index-iterator]+self.rows[row_index-iterator] in boardst[1]:
+                leftbegin.append(self.columns[col_index-iterator]+self.rows[row_index-iterator])
+                downl=1
+            elif downl==0:
+                leftbegin.append(self.columns[col_index-iterator]+self.rows[row_index-iterator])
+                
+            if upl==0 and (col_index+iterator>7 or row_index+iterator>7):
+                upl=1
+            elif upl==0 and self.columns[col_index+iterator]+self.rows[row_index+iterator] in boardst[0]:
+                upl=1
+            elif upl==0 and self.columns[col_index+iterator]+self.rows[row_index+iterator] in boardst[1]:
+                leftbegin.append(self.columns[col_index+iterator]+self.rows[row_index+iterator])
+                upl=1
+            elif upl==0:
+                leftbegin.append(self.columns[col_index+iterator]+self.rows[row_index+iterator])
+                
+            
+            if downr==0 and (col_index+iterator>7 or row_index-iterator<0):  #here
+                downr=1
+            elif downr==0 and self.columns[col_index+iterator]+self.rows[row_index-iterator] in boardst[0]:
+                downr=1
+            elif downr==0 and self.columns[col_index+iterator]+self.rows[row_index-iterator] in boardst[1]:
+                rightbegin.append(self.columns[col_index+iterator]+self.rows[row_index-iterator])
+                downr=1
+            elif downr==0:
+                rightbegin.append(self.columns[col_index+iterator]+self.rows[row_index-iterator])
+                
+            if upr==0 and (col_index-iterator<0 or row_index+iterator>7):
+                upr=1
+            elif upr==0 and self.columns[col_index-iterator]+self.rows[row_index+iterator] in boardst[0]:
+                upr=1
+            elif upr==0 and self.columns[col_index-iterator]+self.rows[row_index+iterator] in boardst[1]:
+                rightbegin.append(self.columns[col_index-iterator]+self.rows[row_index+iterator])
+                upr=1
+            elif upr==0:
+                rightbegin.append(self.columns[col_index-iterator]+self.rows[row_index+iterator])
+                
+            if upl==1 and downl==1 and upr==1 and downr==1:
+                run=False
+                break
+            
+            iterator+=1
+                
+        leftbegin.extend(rightbegin)
+        leftbegin=list(set(leftbegin))
+                
+        vertical=[]
+        horizontal=[]
+        
+        up=0
+        down=0
+        left=0
+        right=0
+        
+        for i in range(1,8):
+                       
+            if down==0 and row_index-i<0:
+                down=1
+            elif down==0 and self.columns[col_index]+self.rows[row_index-i] in boardst[0]:
+                down=1
+            elif down==0 and self.columns[col_index]+self.rows[row_index-i] in boardst[1]:
+                vertical.append(self.columns[col_index]+self.rows[row_index-i])
+                down=1
+            elif down==0:
+                vertical.append(self.columns[col_index]+self.rows[row_index-i])
+                                           
+            if up==0 and row_index+i>7:
+                up=1
+            elif up==0 and self.columns[col_index]+self.rows[row_index+i] in boardst[0]:
+                up=1
+            elif up==0 and self.columns[col_index]+self.rows[row_index+i] in boardst[1]:
+                vertical.append(self.columns[col_index]+self.rows[row_index+i])
+                up=1
+            elif up==0:
+                vertical.append(self.columns[col_index]+self.rows[row_index+i])
+                    
+            if left==0 and col_index-i<0:
+                left=1
+            elif left==0 and self.columns[col_index-i]+self.rows[row_index] in boardst[0]:
+                left=1
+            elif left==0 and self.columns[col_index-i]+self.rows[row_index] in boardst[1]:
+                horizontal.append(self.columns[col_index-i]+self.rows[row_index])
+                left=1
+            elif left==0:
+                horizontal.append(self.columns[col_index-i]+self.rows[row_index])
+                        
+                        
+            if right==0 and col_index+i>7:
+                right=1
+            elif right==0 and self.columns[col_index+i]+self.rows[row_index] in boardst[0]:
+                right=1
+            elif right==0 and self.columns[col_index+i]+self.rows[row_index] in boardst[1]:
+                horizontal.append(self.columns[col_index+i]+self.rows[row_index])
+                right=1
+            elif right==0:
+                horizontal.append(self.columns[col_index+i]+self.rows[row_index])
+                        
+            if up==1 and down==1 and left==1 and right==1:
+                break
+        
+        
+        vertical.extend(horizontal)
+        vertical=list(set(vertical))
+        
+        vertical.extend(leftbegin)
+        vertical=list(set(vertical))
+        return vertical
+        
+    
+    def Bishop(self):
+        square=""
+        for k,v in self.pos_table.items():
+            if v==(self.newx,self.newy):
+                square=k
+                break
+        col=square[0:1]
+        row=square[1:2]
+        col_index=self.columns.index(col)
+        row_index=self.rows.index(row)
+        orig_col=copy.deepcopy(col_index)
+        orig_row=copy.deepcopy(row_index)
+        
+        boardst=[self.wboardstate,self.bboardstate]
+        if self.color=="W":
+            boardst=boardst
+        else:
+            boardst.reverse()
+        
+        run=True
+        iterator=1
+        leftbegin=[]
+        rightbegin=[]
+        
+        downl=0
+        upl=0
+        downr=0
+        upr=0
+        
+        while run:
+            if downl==0 and (col_index-iterator<0 or row_index-iterator<0):
+                downl=1
+            elif downl==0 and self.columns[col_index-iterator]+self.rows[row_index-iterator] in boardst[0]:
+                downl=1
+            elif downl==0 and self.columns[col_index-iterator]+self.rows[row_index-iterator] in boardst[1]:
+                leftbegin.append(self.columns[col_index-iterator]+self.rows[row_index-iterator])
+                downl=1
+            elif downl==0:
+                leftbegin.append(self.columns[col_index-iterator]+self.rows[row_index-iterator])
+                
+            if upl==0 and (col_index+iterator>7 or row_index+iterator>7):
+                upl=1
+            elif upl==0 and self.columns[col_index+iterator]+self.rows[row_index+iterator] in boardst[0]:
+                upl=1
+            elif upl==0 and self.columns[col_index+iterator]+self.rows[row_index+iterator] in boardst[1]:
+                leftbegin.append(self.columns[col_index+iterator]+self.rows[row_index+iterator])
+                upl=1
+            elif upl==0:
+                leftbegin.append(self.columns[col_index+iterator]+self.rows[row_index+iterator])
+                
+            
+            if downr==0 and (col_index+iterator>7 or row_index-iterator<0):  #here
+                downr=1
+            elif downr==0 and self.columns[col_index+iterator]+self.rows[row_index-iterator] in boardst[0]:
+                downr=1
+            elif downr==0 and self.columns[col_index+iterator]+self.rows[row_index-iterator] in boardst[1]:
+                rightbegin.append(self.columns[col_index+iterator]+self.rows[row_index-iterator])
+                downr=1
+            elif downr==0:
+                rightbegin.append(self.columns[col_index+iterator]+self.rows[row_index-iterator])
+                
+            if upr==0 and (col_index-iterator<0 or row_index+iterator>7):
+                upr=1
+            elif upr==0 and self.columns[col_index-iterator]+self.rows[row_index+iterator] in boardst[0]:
+                upr=1
+            elif upr==0 and self.columns[col_index-iterator]+self.rows[row_index+iterator] in boardst[1]:
+                rightbegin.append(self.columns[col_index-iterator]+self.rows[row_index+iterator])
+                upr=1
+            elif upr==0:
+                rightbegin.append(self.columns[col_index-iterator]+self.rows[row_index+iterator])
+                
+            if upl==1 and downl==1 and upr==1 and downr==1:
+                run=False
+                break
+            
+            iterator+=1
+                
+        leftbegin.extend(rightbegin)
+        leftbegin=list(set(leftbegin))
+        return leftbegin
+    
+    def Rook(self):
+        square=""
+        for k,v in self.pos_table.items():
+            if v==(self.newx,self.newy):
+                square=k
+                break
 
+        col=square[0:1]
+        row=square[1:2]
+        col_index=self.columns.index(col)
+        row_index=self.rows.index(row)
+        orig_col=copy.deepcopy(col_index)
+        orig_row=copy.deepcopy(row_index)
+        
+        vertical=[]
+        horizontal=[]
+        
+        up=0
+        down=0
+        left=0
+        right=0
+        
+        boardst=[self.wboardstate,self.bboardstate]
+        if self.color=="W":
+            boardst=boardst
+        else:
+            boardst.reverse()
+            
+        for i in range(1,8):
+                       
+            if down==0 and row_index-i<0:
+                down=1
+            elif down==0 and self.columns[col_index]+self.rows[row_index-i] in boardst[0]:
+                down=1
+            elif down==0 and self.columns[col_index]+self.rows[row_index-i] in boardst[1]:
+                vertical.append(self.columns[col_index]+self.rows[row_index-i])
+                down=1
+            elif down==0:
+                vertical.append(self.columns[col_index]+self.rows[row_index-i])
+                                           
+            if up==0 and row_index+i>7:
+                up=1
+            elif up==0 and self.columns[col_index]+self.rows[row_index+i] in boardst[0]:
+                up=1
+            elif up==0 and self.columns[col_index]+self.rows[row_index+i] in boardst[1]:
+                vertical.append(self.columns[col_index]+self.rows[row_index+i])
+                up=1
+            elif up==0:
+                vertical.append(self.columns[col_index]+self.rows[row_index+i])
+                    
+            if left==0 and col_index-i<0:
+                left=1
+            elif left==0 and self.columns[col_index-i]+self.rows[row_index] in boardst[0]:
+                left=1
+            elif left==0 and self.columns[col_index-i]+self.rows[row_index] in boardst[1]:
+                horizontal.append(self.columns[col_index-i]+self.rows[row_index])
+                left=1
+            elif left==0:
+                horizontal.append(self.columns[col_index-i]+self.rows[row_index])
+                        
+                        
+            if right==0 and col_index+i>7:
+                right=1
+            elif right==0 and self.columns[col_index+i]+self.rows[row_index] in boardst[0]:
+                right=1
+            elif right==0 and self.columns[col_index+i]+self.rows[row_index] in boardst[1]:
+                horizontal.append(self.columns[col_index+i]+self.rows[row_index])
+                right=1
+            elif right==0:
+                horizontal.append(self.columns[col_index+i]+self.rows[row_index])
+                        
+            if up==1 and down==1 and left==1 and right==1:
+                break
+        
+        
+        vertical.extend(horizontal)
+        vertical=list(set(vertical))
+        return vertical
+    
+    def Knight(self):
+        square=""
+        for k,v in self.pos_table.items():
+            if v==(self.newx,self.newy):
+                square=k
+                break
+
+        col=square[0:1]
+        row=square[1:2]
+        col_index=self.columns.index(col)
+        row_index=self.rows.index(row)
+        orig_col=copy.deepcopy(col_index)
+        orig_row=copy.deepcopy(row_index)
+        
+        boardst=[self.wboardstate,self.bboardstate]
+        if self.color=="W":
+            boardst=boardst
+        else:
+            boardst.reverse()
+            
+        move=[]
+        
+        if row_index-2>-1:
+            if col_index-1>-1:
+                if self.columns[col_index-1]+self.rows[row_index-2] in boardst[0]:
+                    pass
+                elif self.columns[col_index-1]+self.rows[row_index-2] in boardst[1]:
+                    move.append(self.columns[col_index-1]+self.rows[row_index-2])
+                else:
+                    move.append(self.columns[col_index-1]+self.rows[row_index-2])
+                    
+            if col_index+1<8:
+                if self.columns[col_index+1]+self.rows[row_index-2] in boardst[0]:
+                    pass
+                elif self.columns[col_index+1]+self.rows[row_index-2] in boardst[1]:
+                    move.append(self.columns[col_index+1]+self.rows[row_index-2])
+                else:
+                    move.append(self.columns[col_index+1]+self.rows[row_index-2])
+                    
+        if row_index+2<8:
+            if col_index-1>-1:
+                if self.columns[col_index-1]+self.rows[row_index+2] in boardst[0]:
+                    pass
+                elif self.columns[col_index-1]+self.rows[row_index+2] in boardst[1]:
+                    move.append(self.columns[col_index-1]+self.rows[row_index+2])
+                else:
+                    move.append(self.columns[col_index-1]+self.rows[row_index+2])
+                    
+            if col_index+1<8:
+                if self.columns[col_index+1]+self.rows[row_index+2] in boardst[0]:
+                    pass
+                elif self.columns[col_index+1]+self.rows[row_index+2] in boardst[1]:
+                    move.append(self.columns[col_index+1]+self.rows[row_index+2])
+                else:
+                    move.append(self.columns[col_index+1]+self.rows[row_index+2])
+                    
+        if col_index-2>-1:
+            if row_index-1>-1:
+                if self.columns[col_index-2]+self.rows[row_index-1] in boardst[0]:
+                    pass
+                elif self.columns[col_index-2]+self.rows[row_index-1] in boardst[1]:
+                    move.append(self.columns[col_index-2]+self.rows[row_index-1])
+                else:
+                    move.append(self.columns[col_index-2]+self.rows[row_index-1])
+                    
+            if row_index+1<8:
+                if self.columns[col_index-2]+self.rows[row_index+1] in boardst[0]:
+                    pass
+                elif self.columns[col_index-2]+self.rows[row_index+1] in boardst[1]:
+                    move.append(self.columns[col_index-2]+self.rows[row_index+1])
+                else:
+                    move.append(self.columns[col_index-2]+self.rows[row_index+1])
+                    
+        if col_index+2<8:
+            if row_index-1>-1:
+                if self.columns[col_index+2]+self.rows[row_index-1] in boardst[0]:
+                    pass
+                elif self.columns[col_index+2]+self.rows[row_index-1] in boardst[1]:
+                    move.append(self.columns[col_index+2]+self.rows[row_index-1])
+                else:
+                    move.append(self.columns[col_index+2]+self.rows[row_index-1])
+                    
+            if row_index+1<8:
+                if self.columns[col_index+2]+self.rows[row_index+1] in boardst[0]:
+                    pass
+                elif self.columns[col_index+2]+self.rows[row_index+1] in boardst[1]:
+                    move.append(self.columns[col_index+2]+self.rows[row_index+1])
+                else:
+                    move.append(self.columns[col_index+2]+self.rows[row_index+1])
+                    
+                    
+        return move
+    
+    def Pawn(self):
+        square=""
+        for k,v in self.pos_table.items():
+            if v==(self.newx,self.newy):
+                square=k
+                break
+
+        col=square[0:1]
+        row=square[1:2]
+        col_index=self.columns.index(col)
+        row_index=self.rows.index(row)
+        orig_col=copy.deepcopy(col_index)
+        orig_row=copy.deepcopy(row_index)
+        
+        boardst=[self.wboardstate,self.bboardstate]
+        if self.color=="W":
+            boardst=boardst
+        else:
+            boardst.reverse()
+            
+        main=[]    
+        move=[]
+        cp=[]
+
+        if self.color=="W" and row_index<7:
+            if row_index==1:
+                if self.columns[col_index]+self.rows[row_index+2] not in self.wboardstate and self.columns[col_index]+self.rows[row_index+1] not in self.bboardstate:
+                    move.append(self.columns[col_index]+self.rows[row_index+2])
+            
+            
+            if self.columns[col_index]+self.rows[row_index+1] not in self.wboardstate and self.columns[col_index]+self.rows[row_index+1] not in self.bboardstate:
+                move.append(self.columns[col_index]+self.rows[row_index+1])
+            if col_index-1>-1 and self.columns[col_index-1]+self.rows[row_index+1] in self.bboardstate:
+                move.append(self.columns[col_index-1]+self.rows[row_index+1])
+            if col_index+1<8 and self.columns[col_index+1]+self.rows[row_index+1] in self.bboardstate:
+                move.append(self.columns[col_index+1]+self.rows[row_index+1])
+                    
+        if self.color=="B" and row_index>0:
+            if row_index==6:
+                if self.columns[col_index]+self.rows[row_index-2] not in self.wboardstate and self.columns[col_index]+self.rows[row_index-2] not in self.bboardstate:
+                    move.append(self.columns[col_index]+self.rows[row_index-2])
+            
+            
+            if self.columns[col_index]+self.rows[row_index-1] not in self.wboardstate and self.columns[col_index]+self.rows[row_index-1] not in self.bboardstate:
+                move.append(self.columns[col_index]+self.rows[row_index-1])
+            if col_index-1>-1 and self.columns[col_index-1]+self.rows[row_index-1] in self.wboardstate:
+                move.append(self.columns[col_index-1]+self.rows[row_index-1])
+            if col_index+1<8 and self.columns[col_index+1]+self.rows[row_index-1] in self.wboardstate:
+                move.append(self.columns[col_index+1]+self.rows[row_index-1])
+                
+        if self.color=="B" and row_index==1:
+            cp.append(1)
+        elif self.color=="W" and row_index==6:
+            cp.append(2)
+                        
+        main.append(move)    
+        main.append(cp)
+        
+        #print("here")
+                               
+        return main
+    
+    def Pawn_attack(self):
+        square=""
+        for k,v in self.pos_table.items():
+            if v==(self.newx,self.newy):
+                square=k
+                break
+
+        col=square[0:1]
+        row=square[1:2]
+        col_index=self.columns.index(col)
+        row_index=self.rows.index(row)
+        orig_col=copy.deepcopy(col_index)
+        orig_row=copy.deepcopy(row_index)
+        
+        boardst=[self.wboardstate,self.bboardstate]
+        if self.color=="W":
+            boardst=boardst
+        else:
+            boardst.reverse()
+            
+        move=[]
+            
+        if self.color=="W" and row_index<7:
+            if col_index-1>-1 and self.columns[col_index-1]+self.rows[row_index+1] not in self.wboardstate:
+                move.append(self.columns[col_index-1]+self.rows[row_index+1])
+            if col_index+1<8 and self.columns[col_index+1]+self.rows[row_index+1] not in self.wboardstate:
+                move.append(self.columns[col_index+1]+self.rows[row_index+1])
+                
+        if self.color=="B" and row_index>0:
+            if col_index-1>-1 and self.columns[col_index-1]+self.rows[row_index-1] not in self.bboardstate:
+                move.append(self.columns[col_index-1]+self.rows[row_index-1])
+            if col_index+1<8 and self.columns[col_index+1]+self.rows[row_index-1] not in self.bboardstate:
+                move.append(self.columns[col_index+1]+self.rows[row_index-1])
+                
+        return move
+    
+    
+                        
 def main():
     pygame.init()
     
@@ -102,6 +685,9 @@ def main():
     wRA = pygame.image.load('C:/Users/babai/Desktop/chess_pieces/wR.png')
     wRH = pygame.image.load('C:/Users/babai/Desktop/chess_pieces/wR.png')
     
+    imgw=pygame.image.load('C:/Users/babai/Desktop/chess_pieces/wQ.png')
+    imgb=pygame.image.load('C:/Users/babai/Desktop/chess_pieces/bQ.png')
+    
     A = font.render('A', False, (255, 255, 255))
     B = font.render('B', False, (255, 255, 255))
     C = font.render('C', False, (255, 255, 255))
@@ -124,27 +710,36 @@ def main():
     
     z=1
     
-    items={'WhiteKing':Pieces("WhiteKing",wK,240,420,surface),'BlackKing':Pieces("BlackKing",bK,240,0,surface),'WhiteQueen':Pieces("WhiteQueen",wQ,180,420,surface),'BlackQueen':Pieces("BlackQueen",bQ,180,0,surface),
-           'BlackRookA':Pieces("BlackRookA",bRA,0,0,surface),'BlackRookH':Pieces("BlackRookH",bRH,420,0,surface),'WhiteRookA':Pieces("WhiteRookA",wRA,0,420,surface),'WhiteRookH':Pieces("WhiteRookH",wRH,420,420,surface),
-           'BlackKnightB':Pieces("BlackKnightB",bNB,60,0,surface),'BlackKnightG':Pieces("BlackKnightG",bNG,360,0,surface),'WhiteKnightB':Pieces("WhiteKnightB",wNB,60,420,surface),'WhiteKnightG':Pieces("WhiteKnightG",wNG,360,420,surface),
-           'BlackBishopC':Pieces("BlackBishopC",bBC,120,0,surface),'BlackBishopF':Pieces("BlackBishopF",bBF,300,0,surface),'WhiteBishopC':Pieces("WhiteBishopC",wBC,120,420,surface),'WhiteBishopF':Pieces("WhiteBishopF",wBF,300,420,surface),
-           'BlackPawnA':Pieces("BlackPawnA",bPA,0,60,surface),'BlackPawnB':Pieces("BlackPawnB",bPB,60,60,surface),'BlackPawnC':Pieces("BlackPawnC",bPC,120,60,surface),'BlackPawnD':Pieces("BlackPawnD",bPD,180,60,surface),
-           'BlackPawnE':Pieces("BlackPawnE",bPE,240,60,surface),'BlackPawnF':Pieces("BlackPawnF",bPF,300,60,surface),'BlackPawnG':Pieces("BlackPawnG",bPG,360,60,surface),'BlackPawnH':Pieces("BlackPawnH",bPH,420,60,surface),
-           'WhitePawnA':Pieces("WhitePawnA",wPA,0,360,surface),'WhitePawnB':Pieces("WhitePawnB",wPB,60,360,surface),'WhitePawnC':Pieces("WhitePawnC",wPC,120,360,surface),'WhitePawnD':Pieces("WhitePawnD",wPD,180,360,surface),
-           'WhitePawnE':Pieces("WhitePawnE",wPE,240,360,surface),'WhitePawnF':Pieces("WhitePawnF",wPF,300,360,surface),'WhitePawnG':Pieces("WhitePawnG",wPG,360,360,surface),'WhitePawnH':Pieces("WhitePawnH",wPH,420,360,surface)}
+    #WhiteKing=Pieces("WhiteKing",wK,240,420,surface,"W","K")
+    #BlackKing=Pieces("BlackKing",bK,240,0,surface,"B","K")
+    
+    items={'WhiteKing':Pieces("WhiteKing",wK,240,420,surface,"W","K"),'BlackKing':Pieces("BlackKing",bK,240,0,surface,"B","K"),'WhiteQueen':Pieces("WhiteQueen",wQ,180,420,surface,"W","Q"),'BlackQueen':Pieces("BlackQueen",bQ,180,0,surface,"B","Q"),
+           'BlackRookA':Pieces("BlackRookA",bRA,0,0,surface,"B","R"),'BlackRookH':Pieces("BlackRookH",bRH,420,0,surface,"B","R"),'WhiteRookA':Pieces("WhiteRookA",wRA,0,420,surface,"W","R"),'WhiteRookH':Pieces("WhiteRookH",wRH,420,420,surface,"W","R"),
+           'BlackKnightB':Pieces("BlackKnightB",bNB,60,0,surface,"B","N"),'BlackKnightG':Pieces("BlackKnightG",bNG,360,0,surface,"B","N"),'WhiteKnightB':Pieces("WhiteKnightB",wNB,60,420,surface,"W","N"),'WhiteKnightG':Pieces("WhiteKnightG",wNG,360,420,surface,"W","N"),
+           'BlackBishopC':Pieces("BlackBishopC",bBC,120,0,surface,"B","B"),'BlackBishopF':Pieces("BlackBishopF",bBF,300,0,surface,"B","B"),'WhiteBishopC':Pieces("WhiteBishopC",wBC,120,420,surface,"W","B"),'WhiteBishopF':Pieces("WhiteBishopF",wBF,300,420,surface,"W","B"),
+           'BlackPawnA':Pieces("BlackPawnA",bPA,0,60,surface,"B","P"),'BlackPawnB':Pieces("BlackPawnB",bPB,60,60,surface,"B","P"),'BlackPawnC':Pieces("BlackPawnC",bPC,120,60,surface,"B","P"),'BlackPawnD':Pieces("BlackPawnD",bPD,180,60,surface,"B","P"),
+           'BlackPawnE':Pieces("BlackPawnE",bPE,240,60,surface,"B","P"),'BlackPawnF':Pieces("BlackPawnF",bPF,300,60,surface,"B","P"),'BlackPawnG':Pieces("BlackPawnG",bPG,360,60,surface,"B","P"),'BlackPawnH':Pieces("BlackPawnH",bPH,420,60,surface,"B","P"),
+           'WhitePawnA':Pieces("WhitePawnA",wPA,0,360,surface,"W","P"),'WhitePawnB':Pieces("WhitePawnB",wPB,60,360,surface,"W","P"),'WhitePawnC':Pieces("WhitePawnC",wPC,120,360,surface,"W","P"),'WhitePawnD':Pieces("WhitePawnD",wPD,180,360,surface,"W","P"),
+           'WhitePawnE':Pieces("WhitePawnE",wPE,240,360,surface,"W","P"),'WhitePawnF':Pieces("WhitePawnF",wPF,300,360,surface,"W","P"),'WhitePawnG':Pieces("WhitePawnG",wPG,360,360,surface,"W","P"),'WhitePawnH':Pieces("WhitePawnH",wPH,420,360,surface,"W","P")}
     
     item_to_piece={"WhiteKing":wK,"BlackKing":bK,"WhiteQueen":wQ,"BlackQueen":bQ,"BlackRookA":bRA,"BlackRookH":bRH,"WhiteRookA":wRA,"WhiteRookH":wRH,"BlackKnightB":bNB,"BlackKnightG":bNG,"WhiteKnightB":wNB,"WhiteKnightG":wNG,
                    "BlackBishopC":bBC,"BlackBishopF":bBF,"WhiteBishopC":wBC,"WhiteBishopF":wBF,"BlackPawnA":bPA,"BlackPawnB":bPB,"BlackPawnC":bPC,"BlackPawnD":bPD,"BlackPawnE":bPE,"BlackPawnF":bPF,"BlackPawnG":bPG,"BlackPawnH":bPH,
-                   "WhitePawnA":wPA,"WhitePawnB":wPB,"WhitePawnC":wPC,"WhitePawnD":wPD,"WhitePawnE":wPE,"WhitePawnF":wPF,"WhitePawnG":wPG,"WhitePawnH":wPH,}
+                   "WhitePawnA":wPA,"WhitePawnB":wPB,"WhitePawnC":wPC,"WhitePawnD":wPD,"WhitePawnE":wPE,"WhitePawnF":wPF,"WhitePawnG":wPG,"WhitePawnH":wPH}
     
     down=False
     checkclick=""
+    sq=""
     x=0
     y=0
     x2=0
     y2=0
     render=0
-    
+    check=0
+    #wboard=[]
+    #bboard=[]
+    turn=["White","Black"]
+    whitemoves=[]
+    blackmoves=[]
     while running:
         clock.tick(120)
         
@@ -240,6 +835,13 @@ def main():
         G1=pygame.draw.rect(surface, colorb, pygame.Rect(360, 420, 60, 60))
         H1=pygame.draw.rect(surface, colorw, pygame.Rect(420, 420, 60, 60))
         
+        allmoves=[]
+        
+     
+        
+        wboard=[]
+        bboard=[]
+        
         
         for event in pygame.event.get():
                 
@@ -258,43 +860,151 @@ def main():
                             break
                    
             elif event.type == MOUSEBUTTONUP:
+                
                 down=False
                 delete=True
-                checkmove=check(k,items,x2,y2)
-                if bool(alphachart.get(int(x2/60))) == True and bool(numchart.get(int(y2/60))) == True and bool(checkclick) == True:
+                
+                for k,v in items.items():
+                    if(items[k].get_color()=="W"):
+                        wboard.append(items[k].get_square(alphachart,numchart))
+                    else:
+                        bboard.append(items[k].get_square(alphachart,numchart))
+                        
+                '''for i in items.keys():
+
+                    checkmove=CheckMove(items,positions.get(items[i].get_square(alphachart,numchart))[0],positions.get(items[i].get_square(alphachart,numchart))[1],items[i].get_color(),items[i].get_piece(),positions,wboard,bboard)
+                    allmoves=checkmove.get_moves()
+
+                    if allmoves:
+                        if items[i].get_color()=="W":
+                            whitemovescheck.extend(allmoves)
+                        elif items[i].get_color()=="B":
+                            blackmovescheck.extend(allmoves)
+                                        
+                whitemovescheck=set(whitemovescheck)
+                blackmovescheck=set(blackmovescheck)
+                
+                
+                if check==1:
+                    pieceset(items,checkclick,wboard,bboard,whitemoves,blackmoves,turn,positions,alphachart,numchart)
+                    check=0'''
+
+                if bool(alphachart.get(int(x2/60))) == True and bool(numchart.get(int(y2/60))) == True and bool(checkclick) == True and checkclick[0:5]==turn[0]:
+
                     new=positions.get(alphachart.get(int(x2/60))+numchart.get(int(y2/60)))
                     
                     
-                    for k,v in items.items():
-                        if k==checkclick:
-                            continue
-                        elif items[k].get_pos()==(new[0],new[1]):
-                            if k[0:5]==checkclick[0:5]:
-                                delete= False
-                            else:
-                                delete=True
-                                del items[k]
-                                break
+                 
+                    checkmove=CheckMove(items,positions.get(alphachart.get(int(x/60))+numchart.get(int(y/60)))[0],positions.get(alphachart.get(int(x/60))+numchart.get(int(y/60)))[1],items[checkclick].get_color(),items[checkclick].get_piece(),positions,wboard,bboard)
+                    piece=items[checkclick].get_piece()
+                    movementspace=[]
+                    if piece=="P":
+                        movementspace=checkmove.Pawn()
+
+                        if movementspace[1]==[2]:
+
+                            items[checkclick].change_piece(imgw,"W","Q")
+                        elif movementspace[1]==[1]:
+                            items[checkclick].change_piece(imgb,"B","Q")
+                            
+                        movementspace=movementspace[0]
+                        
+                    elif piece=="K":
+                        movementspace=checkmove.King()
+                    elif piece=="Q":
+                        movementspace=checkmove.Queen()
+                    elif piece=="B":
+                        movementspace=checkmove.Bishop()
+                    elif piece=="R":
+                        movementspace=checkmove.Rook()
+                    elif piece=="N":
+                        movementspace=checkmove.Knight()
+                        
+                    print(movementspace)
+                        
+                    move=alphachart.get(int(x2/60))+numchart.get(int(y2/60))
+
+                    if move in movementspace:
+                        for k,v in items.items():
+                            if k==checkclick:
+                                continue
+                            elif items[k].get_pos()==(new[0],new[1]):
+                                if k[0:5]==checkclick[0:5]:
+                                    delete= False
+                                else:
+                                    delete=True
+                                    del items[k]
+                                    break
                                                
-                    if delete==True:
-                        
-                        items[checkclick]=Pieces(checkclick,item_to_piece[checkclick],new[0],new[1],surface)
-                        checkclick=""
-                        render=0
-                        
+                        if delete==True:
+                            
+                            items[checkclick].updateloc_permanent(new[0],new[1])
+                            checkclick=""
+                            render=0
+                            turn.reverse()
+                            if turn[1]=="White":
+                                i=wboard.index(alphachart.get(int(x/60))+numchart.get(int(y/60)))
+                                del wboard[i]
+                                wboard.append(alphachart.get(int(x2/60))+numchart.get(int(y2/60)))
+                                
+                            elif turn[1]=="Black":
+                                i=bboard.index(alphachart.get(int(x/60))+numchart.get(int(y/60)))
+                                del bboard[i]
+                                bboard.append(alphachart.get(int(x2/60))+numchart.get(int(y2/60)))
+                           
+                            whitemoves=[]
+                            blackmoves=[]
+                                                            
+                            for i in items.keys():
+                                
+
+                                checkmove=CheckMove(items,positions.get(items[i].get_square(alphachart,numchart))[0],positions.get(items[i].get_square(alphachart,numchart))[1],items[i].get_color(),items[i].get_piece(),positions,wboard,bboard)
+                                allmoves=checkmove.get_moves()
+
+                                if allmoves:
+                                    if items[i].get_color()=="W":
+                                        whitemoves.extend(allmoves)
+                                    elif items[i].get_color()=="B":
+                                        blackmoves.extend(allmoves)
+                                        
+                            whitemoves=set(whitemoves)
+                            blackmoves=set(blackmoves)
+                                        
+                            if turn[1]=="White":
+                                sq=items['BlackKing'].get_square(alphachart,numchart)
+                                if sq in whitemoves:
+                                    check=1
+                                    print("White gives check")
+                                    
+                            elif turn[1]=="Black":
+                                sq=items['WhiteKing'].get_square(alphachart,numchart)
+                                if sq in blackmoves:
+                                    check=1
+                                    print("Black gives check")
+                                
+     
+                        else:
+                           
+                            new=positions.get(alphachart.get(int(x/60))+numchart.get(int(y/60)))
+                            items[checkclick].updateloc_permanent(new[0],new[1])
+                            checkclick=""
+                            render=0
+                            
                     else:
-                        
                         new=positions.get(alphachart.get(int(x/60))+numchart.get(int(y/60)))
-                        items[checkclick]=Pieces(checkclick,item_to_piece[checkclick],new[0],new[1],surface)
+                        items[checkclick].updateloc_permanent(new[0],new[1])
                         checkclick=""
                         render=0
+                        
+                        
 
                 else:
                     if checkclick:
                         new=positions.get(alphachart.get(int(x/60))+numchart.get(int(y/60)))
-                        items[checkclick]=Pieces(checkclick,item_to_piece[checkclick],new[0],new[1],surface)
+                        items[checkclick].updateloc_permanent(new[0],new[1])
                         checkclick=""
                         render=0
+
                     
                        
         if(z==1):
@@ -304,6 +1014,8 @@ def main():
                 else:
                     items[k].update_setup()
                     
+        
+                    
         if down==True:
             x2,y2 = pygame.mouse.get_pos()
             items[checkclick].updateloc(x2-30,y2-30)
@@ -312,6 +1024,56 @@ def main():
         pygame.display.update()
             
     pygame.quit()
+    
+def pieceset(items,checkclick,wboard,bboard,whitemovescheck,blackmovescheck,turn,positions,alphachart,numchart,sq):
+    color=items[checkclick].get_color() 
+    updated_movementspace=[]
+    blackposandblackmoves=list(set(blackmovescheck.extend(bboard)))
+    whiteposandwhitekmoves=list(set(whitemovescheck.extend(wboard)))
+    if turn[0]==color:
+        if color=="W":
+            if checkclick=='WhiteKing':
+                checkmove=CheckMove(items,positions.get(alphachart.get(int(x/60))+numchart.get(int(y/60)))[0],positions.get(alphachart.get(int(x/60))+numchart.get(int(y/60)))[1],items[checkclick].get_color(),items[checkclick].get_piece(),positions,wboard,bboard)
+                movementspace=checkmove.King()
+                for i in movementspace:
+                    if i not in blackmoves:
+                        updated_movementspace.append(i)
+                        
+            else:
+                for i in items.keys():
+                    if items[i].get_name=="WhiteKing":
+                        continue
+                    else:
+                        checkmove=CheckMove(items,positions.get(items[i].get_square(alphachart,numchart))[0],positions.get(items[i].get_square(alphachart,numchart))[1],items[i].get_color(),items[i].get_piece(),positions,wboard,bboard)
+                        piece=items[checkclick].get_piece()
+                        movementspace=[]
+                        if piece=="P":
+                            movementspace=checkmove.Pawn()                                
+                            movementspace=movementspace[0]
+                            
+                            
+                        
+                        
+                    
+                    
+'''def checkfree(items,movementspace,color, positions,wboard,bboard):
+    allmoves=[]
+    for i in items.keys():
+        checkmove=CheckMove(items,positions.get(items[i].get_square(alphachart,numchart))[0],positions.get(items[i].get_square(alphachart,numchart))[1],items[i].get_color(),items[i].get_piece(),positions,wboard,bboard)
+        allmoves=checkmove.get_moves()
+
+            if allmoves:
+                if items[i].get_color()=="W":
+                    whitemoves.extend(allmoves)
+                elif items[i].get_color()=="B":
+                    blackmoves.extend(allmoves)
+                                        
+    whitemoves=set(whitemoves)
+    blackmoves=set(blackmoves)'''
+    
+                
+                
+        
     
 main()
             
