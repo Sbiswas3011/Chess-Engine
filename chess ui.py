@@ -884,12 +884,11 @@ def main():
                 if bool(alphachart.get(int(x2/60))) == True and bool(numchart.get(int(y2/60))) == True and bool(checkclick) == True and checkclick[0:5]==turn[0] and check==0:
 
                     new=positions.get(alphachart.get(int(x2/60))+numchart.get(int(y2/60)))
-                    
-                    
-                 
+                
                     checkmove=CheckMove(items,positions.get(alphachart.get(int(x/60))+numchart.get(int(y/60)))[0],positions.get(alphachart.get(int(x/60))+numchart.get(int(y/60)))[1],items[checkclick].get_color(),items[checkclick].get_piece(),positions,wboard,bboard)
                     piece=items[checkclick].get_piece()
                     movementspace=[]
+                    
                     if piece=="P":
                         movementspace=checkmove.Pawn()
 
@@ -899,16 +898,20 @@ def main():
                         elif movementspace[1]==[1]:
                             items[checkclick].change_piece(imgb,"B","Q")
                             
-                        movementspace=movementspace[0]
+                        movementspace=movementspace[0]            
                         
                     elif piece=="K":
                         movementspace=checkmove.King()
+                        
                     elif piece=="Q":
                         movementspace=checkmove.Queen()
+                        
                     elif piece=="B":
                         movementspace=checkmove.Bishop()
+                        
                     elif piece=="R":
                         movementspace=checkmove.Rook()
+                        
                     elif piece=="N":
                         movementspace=checkmove.Knight()
                         
@@ -957,14 +960,14 @@ def main():
                                     elif items[i].get_color()=="B":
                                         blackmoves.extend(allmoves)
                                         
-                            whitemoves=set(whitemoves)
-                            blackmoves=set(blackmoves)
-                                        
+                            whitemoves=list(set(whitemoves))
+                            blackmoves=list(set(blackmoves))                                        
 
                             sq=items['BlackKing'].get_square(alphachart,numchart)
                             sq2=items['WhiteKing'].get_square(alphachart,numchart)
                             
                             if turn[0]=="White":
+                                
                                 if sq in whitemoves and cont==0:
                                     check=1
                                     print("White gives check")
@@ -981,11 +984,12 @@ def main():
                                         print(moveset)
                                         
                             elif turn[0]=="Black":
-                                if sq in blackmoves and cont==0:
+                                
+                                if sq2 in blackmoves and cont==0:
                                     check=1
                                     print("White gives check")
                                 
-                                elif sq2 in whitemoves and cont==0:
+                                elif sq in whitemoves and cont==0:
                                     bboard.remove(alphachart.get(int(x2/60))+numchart.get(int(y2/60)))
                                     bboard.append(alphachart.get(int(x/60))+numchart.get(int(y/60)))
                                     moveset=pieceset(items,checkclick,wboard,bboard,whitemoves,blackmoves,turn,positions,alphachart,numchart,items[checkclick].get_square(alphachart,numchart))
@@ -1057,11 +1061,6 @@ def main():
             
     pygame.quit()
     
-  
-   
-    
-    
-    
     
     
 def pieceset(items,checkclick,wboard,bboard,whitemovescheck,blackmovescheck,turn,positions,alphachart,numchart,sq):
@@ -1081,6 +1080,7 @@ def pieceset(items,checkclick,wboard,bboard,whitemovescheck,blackmovescheck,turn
             updated_movementspace.extend(checkfree(items,movementspace,sq,turn[0],checkclick,positions,wboard,bboard,alphachart,numchart,whitemovescheck,blackmovescheck))
         if piece=="K":
             movementspace=checkmove.King()
+            print("here",movementspace)
             for i in movementspace:
                     if checkclick=='WhiteKing':
                         if i not in blackmovescheck:
