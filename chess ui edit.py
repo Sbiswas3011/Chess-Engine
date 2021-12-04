@@ -26,6 +26,9 @@ class Pieces(pygame.sprite.Sprite):
     def updatemove(self):
         self.move+=1
         
+    def get_moves(self):
+        return self.move
+        
     def change_piece(self,img,color,piece):
         self.wPH=img
         self.color=color
@@ -83,6 +86,12 @@ class CheckMove(object):
         self.numchart={0:"8",1:"7",2:"6",3:"5",4:"4",5:"3",6:"2",7:"1"}
         #if self.piece=="K":
             #self.king()
+            
+    def update_wboard(self,piece,move):
+        self.wboardstate[piece]=move
+        
+    def update_bboard(self,piece,move):
+        self.bboardstate[piece]=move
             
     def checkmate(self,move):
         
@@ -143,7 +152,7 @@ class CheckMove(object):
                         #print("knight")
                     #print(movementspace)                             
                     tot_movement.extend(movementspace)
-            print("White",set(tot_movement))   
+            #print("White",set(tot_movement))   
             if self.items["BlackKing"].get_square(self.alphachart,self.numchart) in tot_movement:
                 print("BlackKing ",end="")
                 return 1          
@@ -188,7 +197,7 @@ class CheckMove(object):
                                                  
                     tot_movement.extend(movementspace)
                 
-            print("Black",set(tot_movement))    
+            #print("Black",set(tot_movement))    
             if self.items["WhiteKing"].get_square(self.alphachart,self.numchart) in tot_movement:
                 print("WhiteKing ",end="")
                 return 1
@@ -197,17 +206,19 @@ class CheckMove(object):
                 
    
 
-    def verify(self,movespace):
+    def verify(self,movespace,s=[0]):
         square=""
         remove=[]
+        castlevalue=[]
         for k,v in self.pos_table.items():
             if v==(self.prevx,self.prevy):
                 square=k
                 break
         #print(square)
-
+        
         #print("movespace",movespace) 
         if self.color == "W":
+            castlevalue=["G1","C1"]
             for move in movespace:
                 bboardstate=copy.deepcopy(self.bboardstate)
                 wboardstate=copy.deepcopy(self.wboardstate)
@@ -222,11 +233,12 @@ class CheckMove(object):
                 for piece,loc in self.wboardstate.items():
                     if loc==square:
                         self.wboardstate[piece]=move
+                        if move=="G1" and move in s:
+                            self.wboardstate["WhiteRookH"]="F1"
+                        if move=="C1" and move in s:
+                            self.wboardstate["WhiteRookA"]="D1"
                         break
-                    
-                #print("wboard",self.wboardstate)
-                  
-                #checkmate()    
+
                 tot_movement=[]
                 for piece,loc in self.bboardstate.items():
                     
@@ -236,8 +248,7 @@ class CheckMove(object):
                     if pieceinitial=="P": # special case the functions
                         movementspace=self.Pawn(loc,True,"B")   
                         #print("pawn")
-                        #movementspace=movementspace[0]            
-                        
+
                     elif pieceinitial=="K":
                         movementspace=self.King(loc,True,"B")
                         #print("king")
@@ -266,14 +277,27 @@ class CheckMove(object):
                 else:
                     kpos=self.items["WhiteKing"].get_square(self.alphachart,self.numchart)
                     
-                if kpos in tot_movement:
+                #if s==0:    
+                            
+                if move=="G1" and move in s:
+                    if kpos in tot_movement or "F1" in tot_movement or "E1" in tot_movement:
+                        remove.append(move)
+                        castlevalue.remove(move)
+                elif move=="C1" and move in s:
+                    if kpos in tot_movement or "D1" in tot_movement or "E1" in tot_movement:
+                        remove.append(move)
+                        castlevalue.remove(move)
+                elif kpos in tot_movement:
                     remove.append(move)
+                  
                     
                 self.bboardstate=copy.deepcopy(bboardstate)
                 self.wboardstate=copy.deepcopy(wboardstate)
                 
                 
         elif self.color == "B":
+            castlevalue=["G8","C8"]
+            print("earlier movespace",movespace)
             for move in movespace:
                 bboardstate=copy.deepcopy(self.bboardstate)
                 wboardstate=copy.deepcopy(self.wboardstate)
@@ -286,8 +310,14 @@ class CheckMove(object):
                 for piece,loc in self.bboardstate.items():
                     if loc==square:
                         self.bboardstate[piece]=move
+                        if move=="G8" and move in s:
+                            self.bboardstate["BlackRookH"]="F8"
+                        if move=="C8" and move in s:
+                            #print("in here and s is",s,"and move is",move)
+                            self.bboardstate["BlackRookA"]="D8"
                         break
-                    
+
+                #print("WBOARD",self.wboardstate)    
                 tot_movement=[]
                 for piece,loc in self.wboardstate.items():
                     
@@ -328,21 +358,49 @@ class CheckMove(object):
                 else:
                     kpos=self.items["BlackKing"].get_square(self.alphachart,self.numchart)
                     
-                if kpos in tot_movement:
+                #if s==0:    
+                #print("final tot_movement",tot_movement)            
+                if move=="G8" and move in s:
+                    if kpos in tot_movement or "F8" in tot_movement or "E8" in tot_movement:
+                        remove.append(move)
+                        castlevalue.remove(move)
+                elif move=="C1" and move in s:
+                    if kpos in tot_movement or "D8" in tot_movement or "E8" in tot_movement:
+                        remove.append(move)
+                        castlevalue.remove(move)
+                elif kpos in tot_movement:
                     remove.append(move)
+                    
                     
                 self.bboardstate=copy.deepcopy(bboardstate)
                 self.wboardstate=copy.deepcopy(wboardstate)
+                      
 
-        l3 = [x for x in movespace if x not in remove]
-        #print("move",remove)
-        #print("movespace",movespace)
-        return l3           
-                     
+        if self.piece=="K": 
+            #print("s",s)
+            if s:
+                castlevalue=set(movespace).intersection(castlevalue)
+                #print("in here")
+            else:
+                castlevalue=[]
+            l4=[]
+            #print("movespace",movespace)
+            #print("remove",remove)
+            l3 = [x for x in movespace if x not in remove]
+            #print("L3",l3)
+            l4.append(l3)
+            l4.append(list(castlevalue))
+            return l4
+        else:
+            l3 = [x for x in movespace if x not in remove]
+            return l3
+                  
             
     def King(self,squa=(0,0),r=False,color="W"):
         
         square=""
+        #castle=0
+        #ver=False
         if r==True:
             square=squa
         else:
@@ -353,6 +411,8 @@ class CheckMove(object):
             color=copy.deepcopy(self.color)
         
         posibilityspace=[]
+        finalmovespace=[]
+        specialcase=[]
         #print(square)
         col=square[0:1]
         row=square[1:2]
@@ -372,19 +432,71 @@ class CheckMove(object):
                     row_index+=1
             col_index+=1
             row_index-=3
+            
         if color=="W":    
+            if r==False:
+                if self.items["WhiteKing"].get_moves()==0 and self.items["WhiteRookH"].get_moves()==0 and "F1" not in self.wboardstate.values() and "F1" not in self.bboardstate.values() and "G1" not in self.wboardstate.values() and "G1" not in self.bboardstate.values() :
+                    #ver=self.verify_castle("WhiteKing","WhiteRookH")
+                    #if ver==True:
+                    posibilityspace.append("G1")
+                        #castle=1
+                    specialcase.append("G1")
+                if self.items["WhiteKing"].get_moves()==0 and self.items["WhiteRookA"].get_moves()==0 and "D1" not in self.wboardstate.values() and "D1" not in self.bboardstate.values() and "C1" not in self.wboardstate.values() and "C1" not in self.bboardstate.values() and "B1" not in self.wboardstate.values() and "B1" not in self.bboardstate.values():
+                    #ver=self.verify_castle("WhiteKing","WhiteRookA")
+                    #if ver==True:
+                    posibilityspace.append("C1")
+                        #castle=2
+                    specialcase.append("C1")
+               
             c = [x for x in posibilityspace if x not in self.wboardstate.values()]
-            if r==True:
-                return c
+            if r==False and specialcase:
+                finalmovespace.append(specialcase)
+                finalmovespace.append(c)
+            elif r==False:
+                finalmovespace.append(specialcase)
+                finalmovespace.append(c)  
             else:
-                movement=self.verify(c)
+                finalmovespace=c
+                
+            if r==True:
+                return finalmovespace
+            else:
+                #print(finalmovespace)
+                movement=self.verify(finalmovespace[1],finalmovespace[0])
                 return movement
+            
         elif color=="B":
+
+            if r==False:
+                if self.items["BlackKing"].get_moves()==0 and self.items["BlackRookH"].get_moves()==0 and "F8" not in self.wboardstate.values() and "F8" not in self.bboardstate.values() and "G8" not in self.wboardstate.values() and "G8" not in self.bboardstate.values() :
+                    #ver=self.verify_castle("BlackKing","BlackRookH")
+                    #if ver==True:
+                    posibilityspace.append("G8")
+    
+                    specialcase.append("G8")
+                if self.items["BlackKing"].get_moves()==0 and self.items["BlackRookA"].get_moves()==0 and "D8" not in self.wboardstate.values() and "D8" not in self.bboardstate.values() and "C8" not in self.wboardstate.values() and "C8" not in self.bboardstate.values() and "B8" not in self.wboardstate.values() and "B8" not in self.bboardstate.values() :
+                    #ver=self.verify_castle("BlackKing","BlackRookA")
+                    #if ver==True:
+                    posibilityspace.append("C8")
+    
+                    specialcase.append("C8")
+                       
             c = [x for x in posibilityspace if x not in self.bboardstate.values()]
-            if r==True:
-                return c
+            
+            if r==False and specialcase:
+                finalmovespace.append(specialcase)
+                finalmovespace.append(c)
+            elif r==False:
+                finalmovespace.append(specialcase)
+                finalmovespace.append(c) 
             else:
-                movement=self.verify(c)
+                finalmovespace=c
+                 
+            if r==True:
+                return finalmovespace
+            else:
+                print(finalmovespace)
+                movement=self.verify(finalmovespace[1],finalmovespace[0])
                 return movement
         
     def Queen(self,squa=(0,0),r=False,color="W"):
@@ -1150,7 +1262,7 @@ def main():
                 down=False
                 delete=True
                 piece_delete=""
-                print(enpassantwhite,enpassantblack)
+                #print(enpassantwhite,enpassantblack)
                 
                 for k,v in items.items():
 
@@ -1169,7 +1281,7 @@ def main():
                     checkmove=CheckMove(items,positions.get(previous_location)[0],positions.get(previous_location)[1],positions.get(move)[0],positions.get(move)[1],items[checkclick].get_color(),items[checkclick].get_piece(),positions,wboard,bboard)
                     piece=items[checkclick].get_piece()
                     movementspace=[]
-                    
+                    castlespace=[]
                     if piece=="P": 
                         movementspace=checkmove.Pawn()
                         #print("final list ",movementspace)
@@ -1177,23 +1289,18 @@ def main():
                             items[checkclick].change_piece(imgw,"W","Q")
                         elif movementspace[1]==[1]:
                             items[checkclick].change_piece(imgb,"B","Q")   
-                            
-                        '''elif movementspace[1]==[3]:
-                            lst=[]
-                            if items[checkclick].get_color()=="W":
-                                for i in range(movementspace[0]):
-                                    lst.append(movementspace[0][i][0])
-                                enpassantwhite=max(lst.key=lst.count)
-                            elif items[checkclick].get_color()=="B":
-                                for i in range(movementspace[0]):
-                                    lst.append(movementspace[0][i][0])
-                                enpassantblack=max(lst.key=lst.count)'''
                                 
-                        movementspace=movementspace[0]           
+                        movementspace=movementspace[0]   
+                        #print(movementspace)
                         
                     elif piece=="K":
+                        #print(items[checkclick].get_moves())
                         movementspace=checkmove.King()
+                        print("king",movementspace)
+                        castlespace=movementspace[1]
                         
+                        movementspace=movementspace[0]
+                                              
                     elif piece=="Q":
                         movementspace=checkmove.Queen()
                         
@@ -1206,7 +1313,36 @@ def main():
                     elif piece=="N":
                         movementspace=checkmove.Knight()
                         
-                    if move in movementspace:
+                        
+                    if move in castlespace:
+                        items[checkclick].updateloc_permanent(new[0],new[1])
+                        if move=="G1":
+                            items["WhiteRookH"].updateloc_permanent(300,420)
+                            items["WhiteRookH"].updatemove()
+                            checkmove.update_wboard("WhiteRookH","F1")
+                        elif move=="C1":
+                            items["WhiteRookA"].updateloc_permanent(180,420)
+                            items["WhiteRookA"].updatemove()
+                            checkmove.update_wboard("WhiteRookA","D1")
+                        elif move=="G8":
+                            items["BlackRookH"].updateloc_permanent(300,0)
+                            items["BlackRookH"].updatemove()
+                            checkmove.update_bboard("BlackRookH","F8")
+                        elif move=="C8":
+                            items["BlackRookA"].updateloc_permanent(180,0)
+                            items["BlackRookA"].updatemove()
+                            checkmove.update_bboard("BlackRookA","D8")
+                        items[checkclick].updatemove()
+                        checkclick=""
+                        render=0
+                        turn.reverse()
+                        check=checkmove.checkmate(move)
+                        play=1
+                            
+                        if check==1:
+                            print("In Check")
+                            
+                    elif move in movementspace:
                         for k,v in items.items():
                             if k==checkclick:
                                 continue
