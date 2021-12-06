@@ -69,7 +69,7 @@ class Pieces(pygame.sprite.Sprite):
     
 class CheckMove(object):
     
-    def __init__(self,items,prevx,prevy,newx,newy,color,piece,pos_table,wboardstate,bboardstate):
+    def __init__(self,items,prevx,prevy,newx,newy,color,piece,pos_table,wboardstate,bboardstate,prev_move_piece):
         self.items=items
         self.newx=newx
         self.newy=newy
@@ -80,6 +80,7 @@ class CheckMove(object):
         self.pos_table=pos_table
         self.wboardstate=wboardstate
         self.bboardstate=bboardstate
+        self.prev_move_piece=prev_move_piece
         self.columns=["A","B","C","D","E","F","G","H"]
         self.rows=["1","2","3","4","5","6","7","8"]
         self.alphachart={0:"A",1:"B",2:"C",3:"D",4:"E",5:"F",6:"G",7:"H"}
@@ -206,7 +207,7 @@ class CheckMove(object):
                 
    
 
-    def verify(self,movespace,s=[0]):
+    def verify(self,movespace,s=[0],en=[0]):
         square=""
         remove=[]
         castlevalue=[]
@@ -229,7 +230,10 @@ class CheckMove(object):
                     if loc==move:    
                         self.bboardstate.pop(piece)
                         break
-                    
+                    elif loc in en:
+                        self.bboardstate.pop(piece)
+                        break
+                                      
                 for piece,loc in self.wboardstate.items():
                     if loc==square:
                         self.wboardstate[piece]=move
@@ -278,7 +282,7 @@ class CheckMove(object):
                     kpos=self.items["WhiteKing"].get_square(self.alphachart,self.numchart)
                     
                 #if s==0:    
-                            
+                    
                 if move=="G1" and move in s:
                     if kpos in tot_movement or "F1" in tot_movement or "E1" in tot_movement:
                         remove.append(move)
@@ -297,13 +301,16 @@ class CheckMove(object):
                 
         elif self.color == "B":
             castlevalue=["G8","C8"]
-            print("earlier movespace",movespace)
+            #print("earlier movespace",movespace)
             for move in movespace:
                 bboardstate=copy.deepcopy(self.bboardstate)
                 wboardstate=copy.deepcopy(self.wboardstate)
                 #print(move,square)
                 for piece,loc in self.wboardstate.items(): #deepcopy required
                     if loc==move:    
+                        self.wboardstate.pop(piece)
+                        break
+                    elif loc in en:
                         self.wboardstate.pop(piece)
                         break
                     
@@ -359,7 +366,8 @@ class CheckMove(object):
                     kpos=self.items["BlackKing"].get_square(self.alphachart,self.numchart)
                     
                 #if s==0:    
-                #print("final tot_movement",tot_movement)            
+                #print("final tot_movement",tot_movement)
+
                 if move=="G8" and move in s:
                     if kpos in tot_movement or "F8" in tot_movement or "E8" in tot_movement:
                         remove.append(move)
@@ -370,8 +378,8 @@ class CheckMove(object):
                         castlevalue.remove(move)
                 elif kpos in tot_movement:
                     remove.append(move)
-                    
-                    
+
+              
                 self.bboardstate=copy.deepcopy(bboardstate)
                 self.wboardstate=copy.deepcopy(wboardstate)
                       
@@ -392,8 +400,11 @@ class CheckMove(object):
             l4.append(list(castlevalue))
             return l4
         else:
+
             l3 = [x for x in movespace if x not in remove]
             return l3
+
+                
                   
             
     def King(self,squa=(0,0),r=False,color="W"):
@@ -935,8 +946,10 @@ class CheckMove(object):
             movement=self.verify(move)
             return movement
     
-    def Pawn(self,squa=(0,0),r=False,color="W",move_count=0):
+    def Pawn(self,squa=(0,0),r=False,color="W"):
         square=""
+        enpassant=[]
+        enpassant=[]
         if r==True:
             square=squa
         else:
@@ -968,43 +981,53 @@ class CheckMove(object):
             if row_index==1:
                 if self.columns[col_index]+self.rows[row_index+2] not in self.wboardstate.values() and self.columns[col_index]+self.rows[row_index+1] not in self.bboardstate.values():
                     move.append(self.columns[col_index]+self.rows[row_index+2])
-                    
-            '''if row_index==3:
-                if self.columns[col_index+1]+self.rows[row_index] not in self.wboardstate.values() and self.columns[col_index+1]+self.rows[row_index] in self.bboardstate.values():
-                    enpassantwhite.append(col_index+1)
-                if self.columns[col_index-1]+self.rows[row_index] not in self.wboardstate.values() and self.columns[col_index-1]+self.rows[row_index] in self.bboardstate.values():
-                    enpassantwhite.append(col_index-1)'''
                               
             if self.columns[col_index]+self.rows[row_index+1] not in self.wboardstate.values() and self.columns[col_index]+self.rows[row_index+1] not in self.bboardstate.values():
                 move.append(self.columns[col_index]+self.rows[row_index+1])
+                
             if col_index-1>-1 and self.columns[col_index-1]+self.rows[row_index+1] in self.bboardstate.values():
                 move.append(self.columns[col_index-1]+self.rows[row_index+1])
+            
+            if col_index-1>-1 and row_index==4 and self.items[self.prev_move_piece].get_piece()=="P" and self.items[self.prev_move_piece].get_square(self.alphachart,self.numchart)==self.columns[col_index-1]+self.rows[row_index] and self.items[self.prev_move_piece].get_moves()==1:
+                move.append(self.columns[col_index-1]+self.rows[row_index+1])
+                enpassant.append(self.columns[col_index-1]+self.rows[row_index+1])
+    
             if col_index+1<8 and self.columns[col_index+1]+self.rows[row_index+1] in self.bboardstate.values():
                 move.append(self.columns[col_index+1]+self.rows[row_index+1])
+                
+            if col_index+1<8 and row_index==4 and self.items[self.prev_move_piece].get_piece()=="P" and self.items[self.prev_move_piece].get_square(self.alphachart,self.numchart)==self.columns[col_index+1]+self.rows[row_index] and self.items[self.prev_move_piece].get_moves()==1:
+                move.append(self.columns[col_index+1]+self.rows[row_index+1])
+                enpassant.append(self.columns[col_index+1]+self.rows[row_index+1])
+                
                     
         if color=="B" and row_index>0:
             if row_index==6:
                 if self.columns[col_index]+self.rows[row_index-2] not in self.wboardstate.values() and self.columns[col_index]+self.rows[row_index-2] not in self.bboardstate.values():
                     move.append(self.columns[col_index]+self.rows[row_index-2])
             
-            '''if row_index==4:
-                if self.columns[col_index+1]+self.rows[row_index] not in self.bboardstate.values() and self.columns[col_index+1]+self.rows[row_index] in self.wboardstate.values():
-                    enpassantblack.append(col_index+1)
-                if self.columns[col_index-1]+self.rows[row_index] not in self.bboardstate.values() and self.columns[col_index-1]+self.rows[row_index] in self.wboardstate.values():
-                    enpassantblack.append(col_index-1)'''
             
             if self.columns[col_index]+self.rows[row_index-1] not in self.wboardstate.values() and self.columns[col_index]+self.rows[row_index-1] not in self.bboardstate.values():
                 move.append(self.columns[col_index]+self.rows[row_index-1])
+                
             if col_index-1>-1 and self.columns[col_index-1]+self.rows[row_index-1] in self.wboardstate.values():
                 move.append(self.columns[col_index-1]+self.rows[row_index-1])
+                
+            if col_index-1>-1 and row_index==3 and self.items[self.prev_move_piece].get_piece()=="P" and self.items[self.prev_move_piece].get_square(self.alphachart,self.numchart)==self.columns[col_index-1]+self.rows[row_index] and self.items[self.prev_move_piece].get_moves()==1:
+                move.append(self.columns[col_index-1]+self.rows[row_index-1])
+                enpassant.append(self.columns[col_index-1]+self.rows[row_index-1])
+                
             if col_index+1<8 and self.columns[col_index+1]+self.rows[row_index-1] in self.wboardstate.values():
                 move.append(self.columns[col_index+1]+self.rows[row_index-1])
+                
+            if col_index+1<8 and row_index==3 and self.items[self.prev_move_piece].get_piece()=="P" and self.items[self.prev_move_piece].get_square(self.alphachart,self.numchart)==self.columns[col_index+1]+self.rows[row_index] and self.items[self.prev_move_piece].get_moves()==1:
+                move.append(self.columns[col_index+1]+self.rows[row_index-1])
+                enpassant.append(self.columns[col_index+1]+self.rows[row_index-1])
                 
         if color=="B" and row_index==1:
             cp.append(1)
         elif color=="W" and row_index==6:
             cp.append(2)
-                        
+             
         main.append(move) 
                     
         if r==True:
@@ -1016,11 +1039,19 @@ class CheckMove(object):
             return l3
         
         else:
+            print(self.prev_move_piece)
+            print("enpassant",enpassant,main[0])
             movementspace=self.verify(main[0])
+            print("movementspace",movementspace)
             move=[]
-            move.append(movementspace)
-            move.append(cp)
-            move_count+=1
+            if not enpassant:
+                move.append(movementspace)
+                move.append(cp)
+            else:
+                move.append(movementspace)
+                move.append(enpassant)
+                
+            print("move",move)
 
             return move
     
@@ -1034,7 +1065,7 @@ def main():
     colorb = (119, 148, 85)
     pygame.display.set_caption('CHESS')
     font = pygame.font.SysFont('Comic Sans MS', 15)
-    white=(255,255,255)
+
     running=True
     
     clock = pygame.time.Clock()  
@@ -1123,6 +1154,7 @@ def main():
 
     
     down=False
+    prev_checkclick=""
     checkclick=""
     sq=""
     x=0
@@ -1131,14 +1163,12 @@ def main():
     y2=0
     render=0
     turn=["White","Black"]
-    whitemoves=[]
-    blackmoves=[]
-    
-    enpassantwhite=[]
-    enpassantblack=[]
-    
+
     while running:
         clock.tick(120)
+        
+        wboard={}
+        bboard={}
         
         pygame.draw.rect(surface, (0,0,0), pygame.Rect(0, 0, 500, 500))
         
@@ -1233,8 +1263,7 @@ def main():
         H1=pygame.draw.rect(surface, colorw, pygame.Rect(420, 420, 60, 60))
         
 
-        wboard={}
-        bboard={}
+        
         check=0
         play=0
         encounter=0
@@ -1277,21 +1306,26 @@ def main():
                     previous_location=alphachart.get(int(x/60))+numchart.get(int(y/60))
                     move=alphachart.get(int(x2/60))+numchart.get(int(y2/60))
                     new=positions.get(move)
+                    print
                 
-                    checkmove=CheckMove(items,positions.get(previous_location)[0],positions.get(previous_location)[1],positions.get(move)[0],positions.get(move)[1],items[checkclick].get_color(),items[checkclick].get_piece(),positions,wboard,bboard)
+                    checkmove=CheckMove(items,positions.get(previous_location)[0],positions.get(previous_location)[1],positions.get(move)[0],positions.get(move)[1],items[checkclick].get_color(),items[checkclick].get_piece(),positions,wboard,bboard,prev_checkclick)
                     piece=items[checkclick].get_piece()
                     movementspace=[]
                     castlespace=[]
+                    enpassantspace=[]
                     if piece=="P": 
                         movementspace=checkmove.Pawn()
-                        #print("final list ",movementspace)
+                        print("final list ",movementspace)
                         if movementspace[1]==[2]:
                             items[checkclick].change_piece(imgw,"W","Q")
                         elif movementspace[1]==[1]:
                             items[checkclick].change_piece(imgb,"B","Q")   
-                                
-                        movementspace=movementspace[0]   
-                        #print(movementspace)
+                        enpassantspace=movementspace[1]        
+                        movementspace=movementspace[0] 
+                        
+                        print(enpassantspace)
+                        
+                        #print("enpassant",enpassantspace)
                         
                     elif piece=="K":
                         #print(items[checkclick].get_moves())
@@ -1333,15 +1367,34 @@ def main():
                             items["BlackRookA"].updatemove()
                             checkmove.update_bboard("BlackRookA","D8")
                         items[checkclick].updatemove()
+                        prev_checkclick=copy.deepcopy(checkclick)
                         checkclick=""
                         render=0
                         turn.reverse()
                         check=checkmove.checkmate(move)
                         play=1
+
                             
                         if check==1:
                             print("In Check")
                             
+                    elif move in enpassantspace:
+                        print("in here")
+                        items[checkclick].updateloc_permanent(new[0],new[1])
+                        del items[prev_checkclick]
+                        items[checkclick].updatemove()
+                        prev_checkclick=copy.deepcopy(checkclick)
+                        checkclick=""
+                        render=0
+                        turn.reverse()
+                        check=checkmove.checkmate(move)
+                        play=1
+                        
+                        
+                        if check==1:
+                            print("In Check")
+                        
+                                               
                     elif move in movementspace:
                         for k,v in items.items():
                             if k==checkclick:
@@ -1360,11 +1413,13 @@ def main():
                                 encounter=1
                             items[checkclick].updateloc_permanent(new[0],new[1])
                             items[checkclick].updatemove()
+                            prev_checkclick=copy.deepcopy(checkclick)
                             checkclick=""
                             render=0
                             turn.reverse()
                             check=checkmove.checkmate(move)
                             play=1
+
                             
                         else:                                  
                             new=positions.get(alphachart.get(int(x/60))+numchart.get(int(y/60)))
