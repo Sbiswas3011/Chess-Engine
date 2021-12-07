@@ -1039,10 +1039,10 @@ class CheckMove(object):
             return l3
         
         else:
-            print(self.prev_move_piece)
-            print("enpassant",enpassant,main[0])
+            #print(self.prev_move_piece)
+            #print("enpassant",enpassant,main[0])
             movementspace=self.verify(main[0])
-            print("movementspace",movementspace)
+            #print("movementspace",movementspace)
             move=[]
             if not enpassant:
                 move.append(movementspace)
@@ -1051,7 +1051,7 @@ class CheckMove(object):
                 move.append(movementspace)
                 move.append(enpassant)
                 
-            print("move",move)
+            #print("move",move)
 
             return move
     
@@ -1139,10 +1139,7 @@ def main():
     alpha_num=[A,B,C,D,E,F,G,H,n1,n2,n3,n4,n5,n6,n7,n8]
     
     z=1
-    
-    #WhiteKing=Pieces("WhiteKing",wK,240,420,surface,"W","K")
-    #BlackKing=Pieces("BlackKing",bK,240,0,surface,"B","K")
-    
+
     items={'WhiteKing':Pieces("WhiteKing",wK,240,420,surface,"W","K",0),'BlackKing':Pieces("BlackKing",bK,240,0,surface,"B","K",0),'WhiteQueen':Pieces("WhiteQueen",wQ,180,420,surface,"W","Q",0),'BlackQueen':Pieces("BlackQueen",bQ,180,0,surface,"B","Q",0),
            'BlackRookA':Pieces("BlackRookA",bRA,0,0,surface,"B","R",0),'BlackRookH':Pieces("BlackRookH",bRH,420,0,surface,"B","R",0),'WhiteRookA':Pieces("WhiteRookA",wRA,0,420,surface,"W","R",0),'WhiteRookH':Pieces("WhiteRookH",wRH,420,420,surface,"W","R",0),
            'BlackKnightB':Pieces("BlackKnightB",bNB,60,0,surface,"B","N",0),'BlackKnightG':Pieces("BlackKnightG",bNG,360,0,surface,"B","N",0),'WhiteKnightB':Pieces("WhiteKnightB",wNB,60,420,surface,"W","N",0),'WhiteKnightG':Pieces("WhiteKnightG",wNG,360,420,surface,"W","N",0),
@@ -1367,11 +1364,11 @@ def main():
                             items["BlackRookA"].updatemove()
                             checkmove.update_bboard("BlackRookA","D8")
                         items[checkclick].updatemove()
+                        check=checkmove.checkmate(move)
                         prev_checkclick=copy.deepcopy(checkclick)
                         checkclick=""
                         render=0
                         turn.reverse()
-                        check=checkmove.checkmate(move)
                         play=1
 
                             
@@ -1383,11 +1380,11 @@ def main():
                         items[checkclick].updateloc_permanent(new[0],new[1])
                         del items[prev_checkclick]
                         items[checkclick].updatemove()
+                        check=checkmove.checkmate(move)
                         prev_checkclick=copy.deepcopy(checkclick)
                         checkclick=""
                         render=0
-                        turn.reverse()
-                        check=checkmove.checkmate(move)
+                        turn.reverse()                       
                         play=1
                         
                         
@@ -1408,16 +1405,17 @@ def main():
                                     break
                                 
                         if delete==True:
+                            items[checkclick].updateloc_permanent(new[0],new[1])
+                            items[checkclick].updatemove()
+                            check=checkmove.checkmate(move)
                             if piece_delete:
                                 del items[piece_delete]
                                 encounter=1
-                            items[checkclick].updateloc_permanent(new[0],new[1])
-                            items[checkclick].updatemove()
                             prev_checkclick=copy.deepcopy(checkclick)
                             checkclick=""
                             render=0
                             turn.reverse()
-                            check=checkmove.checkmate(move)
+                            #check=checkmove.checkmate(move)
                             play=1
 
                             
