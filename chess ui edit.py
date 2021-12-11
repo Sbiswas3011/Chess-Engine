@@ -129,6 +129,7 @@ class CheckMove(object):
                     movementspace=[]
                         
                     if pieceinitial=="P": # special case the functions
+                        #print("its a pawn")
                         movementspace=self.Pawn(self.wboardstate.get(k),True,"W")  
                         #print("pawn")
                                       
@@ -137,6 +138,7 @@ class CheckMove(object):
                         #print("king")
                                                   
                     elif pieceinitial=="Q":
+                        #print("its a queen")
                         movementspace=self.Queen(self.wboardstate.get(k),True,"W")
                         #print("queen")
                                                     
@@ -237,10 +239,12 @@ class CheckMove(object):
                 for piece,loc in self.wboardstate.items():
                     if loc==square:
                         self.wboardstate[piece]=move
-                        if move=="G1" and move in s:
-                            self.wboardstate["WhiteRookH"]="F1"
-                        if move=="C1" and move in s:
-                            self.wboardstate["WhiteRookA"]="D1"
+                        if "WhiteRookH" in self.wboardstate:
+                            if move=="G1" and move in s:
+                                self.wboardstate["WhiteRookH"]="F1"
+                        if "WhiteRookA" in self.wboardstate:
+                            if move=="C1" and move in s:
+                                self.wboardstate["WhiteRookA"]="D1"
                         break
 
                 tot_movement=[]
@@ -317,11 +321,12 @@ class CheckMove(object):
                 for piece,loc in self.bboardstate.items():
                     if loc==square:
                         self.bboardstate[piece]=move
-                        if move=="G8" and move in s:
-                            self.bboardstate["BlackRookH"]="F8"
-                        if move=="C8" and move in s:
-                            #print("in here and s is",s,"and move is",move)
-                            self.bboardstate["BlackRookA"]="D8"
+                        if "BlackRookH" in self.bboardstate:
+                            if move=="G8" and move in s:
+                                self.bboardstate["BlackRookH"]="F8"
+                        if "BlackRookA" in self.bboardstate:
+                            if move=="C8" and move in s:
+                                self.bboardstate["BlackRookA"]="D8"
                         break
 
                 #print("WBOARD",self.wboardstate)    
@@ -446,18 +451,20 @@ class CheckMove(object):
             
         if color=="W":    
             if r==False:
-                if self.items["WhiteKing"].get_moves()==0 and self.items["WhiteRookH"].get_moves()==0 and "F1" not in self.wboardstate.values() and "F1" not in self.bboardstate.values() and "G1" not in self.wboardstate.values() and "G1" not in self.bboardstate.values() :
-                    #ver=self.verify_castle("WhiteKing","WhiteRookH")
-                    #if ver==True:
-                    posibilityspace.append("G1")
-                        #castle=1
-                    specialcase.append("G1")
-                if self.items["WhiteKing"].get_moves()==0 and self.items["WhiteRookA"].get_moves()==0 and "D1" not in self.wboardstate.values() and "D1" not in self.bboardstate.values() and "C1" not in self.wboardstate.values() and "C1" not in self.bboardstate.values() and "B1" not in self.wboardstate.values() and "B1" not in self.bboardstate.values():
-                    #ver=self.verify_castle("WhiteKing","WhiteRookA")
-                    #if ver==True:
-                    posibilityspace.append("C1")
-                        #castle=2
-                    specialcase.append("C1")
+                if "WhiteRookH" in self.items:
+                    if self.items["WhiteKing"].get_moves()==0 and self.items["WhiteRookH"].get_moves()==0 and "F1" not in self.wboardstate.values() and "F1" not in self.bboardstate.values() and "G1" not in self.wboardstate.values() and "G1" not in self.bboardstate.values() :
+                        #ver=self.verify_castle("WhiteKing","WhiteRookH")
+                        #if ver==True:
+                        posibilityspace.append("G1")
+                            #castle=1
+                        specialcase.append("G1")
+                if "WhiteRookA" in self.items:
+                    if self.items["WhiteKing"].get_moves()==0 and self.items["WhiteRookA"].get_moves()==0 and "D1" not in self.wboardstate.values() and "D1" not in self.bboardstate.values() and "C1" not in self.wboardstate.values() and "C1" not in self.bboardstate.values() and "B1" not in self.wboardstate.values() and "B1" not in self.bboardstate.values():
+                        #ver=self.verify_castle("WhiteKing","WhiteRookA")
+                        #if ver==True:
+                        posibilityspace.append("C1")
+                            #castle=2
+                        specialcase.append("C1")
                
             c = [x for x in posibilityspace if x not in self.wboardstate.values()]
             if r==False and specialcase:
@@ -479,18 +486,20 @@ class CheckMove(object):
         elif color=="B":
 
             if r==False:
-                if self.items["BlackKing"].get_moves()==0 and self.items["BlackRookH"].get_moves()==0 and "F8" not in self.wboardstate.values() and "F8" not in self.bboardstate.values() and "G8" not in self.wboardstate.values() and "G8" not in self.bboardstate.values() :
-                    #ver=self.verify_castle("BlackKing","BlackRookH")
-                    #if ver==True:
-                    posibilityspace.append("G8")
-    
-                    specialcase.append("G8")
-                if self.items["BlackKing"].get_moves()==0 and self.items["BlackRookA"].get_moves()==0 and "D8" not in self.wboardstate.values() and "D8" not in self.bboardstate.values() and "C8" not in self.wboardstate.values() and "C8" not in self.bboardstate.values() and "B8" not in self.wboardstate.values() and "B8" not in self.bboardstate.values() :
-                    #ver=self.verify_castle("BlackKing","BlackRookA")
-                    #if ver==True:
-                    posibilityspace.append("C8")
-    
-                    specialcase.append("C8")
+                if "BlackRookH" in self.items:
+                    if self.items["BlackKing"].get_moves()==0 and self.items["BlackRookH"].get_moves()==0 and "F8" not in self.wboardstate.values() and "F8" not in self.bboardstate.values() and "G8" not in self.wboardstate.values() and "G8" not in self.bboardstate.values() :
+                        #ver=self.verify_castle("BlackKing","BlackRookH")
+                        #if ver==True:
+                        posibilityspace.append("G8")
+        
+                        specialcase.append("G8")
+                if "BlackRookA" in self.items:
+                    if self.items["BlackKing"].get_moves()==0 and self.items["BlackRookA"].get_moves()==0 and "D8" not in self.wboardstate.values() and "D8" not in self.bboardstate.values() and "C8" not in self.wboardstate.values() and "C8" not in self.bboardstate.values() and "B8" not in self.wboardstate.values() and "B8" not in self.bboardstate.values() :
+                        #ver=self.verify_castle("BlackKing","BlackRookA")
+                        #if ver==True:
+                        posibilityspace.append("C8")
+        
+                        specialcase.append("C8")
                        
             c = [x for x in posibilityspace if x not in self.bboardstate.values()]
             
@@ -1054,7 +1063,12 @@ class CheckMove(object):
             #print("move",move)
 
             return move
-    
+
+def draw_circle_alpha(surface, color, center, radius):
+    target_rect = pygame.Rect(center, (0, 0)).inflate((radius * 2, radius * 2))
+    shape_surf = pygame.Surface(target_rect.size, pygame.SRCALPHA)
+    pygame.draw.circle(shape_surf, color, (radius, radius), radius)
+    surface.blit(shape_surf, target_rect)    
                             
 def main():
     pygame.init()
@@ -1115,7 +1129,7 @@ def main():
     wRA = pygame.image.load('C:/Users/babai/Desktop/chess_pieces/wR.png')
     wRH = pygame.image.load('C:/Users/babai/Desktop/chess_pieces/wR.png')
     
-    imgw=pygame.image.load('C:/Users/babai/Desktop/chess_pieces/wQ.png')
+    imgw=pygame.image.load('C:/Users/babai/Desktop/chess_pieces/wQ.png') 
     imgb=pygame.image.load('C:/Users/babai/Desktop/chess_pieces/bQ.png')
     
     A = font.render('A', False, (255, 255, 255))
@@ -1151,15 +1165,18 @@ def main():
 
     
     down=False
+    move_done=False
     prev_checkclick=""
     checkclick=""
-    sq=""
     x=0
     y=0
+    x_fixed=0
+    y_fixed=0
     x2=0
     y2=0
     render=0
     turn=["White","Black"]
+    movementspace=[]
 
     while running:
         clock.tick(120)
@@ -1266,6 +1283,23 @@ def main():
         encounter=0
         
         
+    
+        
+        if down==False and move_done==True:
+            pygame.draw.rect(surface,(245,247,104),pygame.Rect(int((x/60))*60,int((y/60))*60,60,60))
+            pygame.draw.rect(surface,(245,247,104),pygame.Rect(int((x_fixed/60))*60,int((y_fixed/60))*60,60,60))         
+        elif down==True and pygame.mouse.get_pos()[0]<=480 and pygame.mouse.get_pos()[1]<=480:
+            pygame.draw.rect(surface,(245,247,104),pygame.Rect(int((x/60))*60,int((y/60))*60,60,60))
+            pygame.draw.rect(surface,(245,247,104),pygame.Rect(int((pygame.mouse.get_pos()[0]//60))*60,int((pygame.mouse.get_pos()[1]//60))*60,60,60))
+            pygame.draw.rect(surface,(245,150,50),pygame.Rect(int((pygame.mouse.get_pos()[0]/60))*60,int((pygame.mouse.get_pos()[1]/60))*60,60,60),5)
+            #draw_circle_alpha(surface,(0,0,0),((int(pygame.mouse.get_pos()[0]/60)*60)+30,(int(pygame.mouse.get_pos()[1]/60)*60)+30),10)
+            for i in movementspace:
+                draw_circle_alpha(surface,(110,110,110),(positions.get(i)[0]+30,positions.get(i)[1]+30),10)
+
+            
+        if down==False and pygame.mouse.get_pos()[0]<=480 and pygame.mouse.get_pos()[1]<=480:
+            pygame.draw.rect(surface,(245,150,50),pygame.Rect(int((pygame.mouse.get_pos()[0]/60))*60,int((pygame.mouse.get_pos()[1]/60))*60,60,60),5)
+        
         for event in pygame.event.get():
                 
             if event.type == pygame.QUIT:
@@ -1273,7 +1307,9 @@ def main():
                 
             elif event.type == MOUSEBUTTONDOWN:
                 if down==False:
+                    move_done=False
                     x,y = pygame.mouse.get_pos()
+                    #x_fixed,y_fixed=x,y
                     if x<=480 and y<=480:
                         new=positions.get(alphachart.get(int(x/60))+numchart.get(int(y/60)))
                         for k,v in items.items():
@@ -1287,9 +1323,11 @@ def main():
                 
                 down=False
                 delete=True
+                
+                
                 piece_delete=""
                 #print(enpassantwhite,enpassantblack)
-                
+                x_fixed,y_fixed=x2,y2
                 for k,v in items.items():
 
                     if(items[k].get_color()=="W"):
@@ -1303,7 +1341,6 @@ def main():
                     previous_location=alphachart.get(int(x/60))+numchart.get(int(y/60))
                     move=alphachart.get(int(x2/60))+numchart.get(int(y2/60))
                     new=positions.get(move)
-                    print
                 
                     checkmove=CheckMove(items,positions.get(previous_location)[0],positions.get(previous_location)[1],positions.get(move)[0],positions.get(move)[1],items[checkclick].get_color(),items[checkclick].get_piece(),positions,wboard,bboard,prev_checkclick)
                     piece=items[checkclick].get_piece()
@@ -1321,8 +1358,6 @@ def main():
                         movementspace=movementspace[0] 
                         
                         print(enpassantspace)
-                        
-                        #print("enpassant",enpassantspace)
                         
                     elif piece=="K":
                         #print(items[checkclick].get_moves())
@@ -1370,6 +1405,7 @@ def main():
                         render=0
                         turn.reverse()
                         play=1
+                        move_done=True
 
                             
                         if check==1:
@@ -1386,6 +1422,7 @@ def main():
                         render=0
                         turn.reverse()                       
                         play=1
+                        move_done=True
                         
                         
                         if check==1:
@@ -1417,6 +1454,7 @@ def main():
                             turn.reverse()
                             #check=checkmove.checkmate(move)
                             play=1
+                            move_done=True
 
                             
                         else:                                  
@@ -1453,15 +1491,15 @@ def main():
             x2,y2 = pygame.mouse.get_pos()
             items[checkclick].updateloc(x2-30,y2-30)
     
-        pygame.display.flip()
+        #pygame.display.flip()
         pygame.display.update()
         
-        if check==1 and play==1:
+        '''if check==1 and play==1:
             playsound('C:/Users/babai/Desktop/chess_sounds/CHECK_MED_SHORT.wav')#has to get shorter           
         elif encounter==1 and play==1:
-            playsound('C:/Users/babai/Desktop/chess_sounds/ELECTRIC_POP.wav')#has to get shorter 
+            playsound('C:/Users/babai/Desktop/chess_sounds/ELECTRIC_POP_2.wav')#has to get shorter 
         elif play==1:
-            playsound('C:/Users/babai/Desktop/chess_sounds/POP.wav')
+            playsound('C:/Users/babai/Desktop/chess_sounds/POP.wav')'''
             
     pygame.quit()
 
