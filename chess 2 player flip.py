@@ -1690,7 +1690,7 @@ def main(flip):
                 flip_board=False
                 
                                                   
-        if down==True:
+        if down==True and endgame==False:
             x2,y2 = pygame.mouse.get_pos()
             items[checkclick].updateloc(x2-30,y2-30)
             
@@ -1712,7 +1712,7 @@ def main(flip):
                         surface.blit(timelist.get(time_format[2]), (660,335))
                         surface.blit(timelist.get(time_format[3]), (690,335))
                     else:
-                        surface.blit(timelist.get(time_format[0]), (590,335))
+                        surface.blit(timelist.get(time_format[0]), (580,335))
                         surface.blit(timelist.get(time_format[1]), (610,335))
                         surface.blit(timelist.get(time_format[2]), (640,335))
                         surface.blit(timelist.get(time_format[3]), (660,335))
@@ -1735,7 +1735,7 @@ def main(flip):
                         surface.blit(timelist.get(time_format[2]), (660,85))
                         surface.blit(timelist.get(time_format[3]), (690,85))
                     else:
-                        surface.blit(timelist.get(time_format[0]), (590,85))
+                        surface.blit(timelist.get(time_format[0]), (580,85))
                         surface.blit(timelist.get(time_format[1]), (610,85))
                         surface.blit(timelist.get(time_format[2]), (640,85))
                         surface.blit(timelist.get(time_format[3]), (660,85))
@@ -1751,7 +1751,7 @@ def main(flip):
                 surface.blit(timelist.get(time_format[2]), (660,85))
                 surface.blit(timelist.get(time_format[3]), (690,85))
             else:
-                surface.blit(timelist.get(time_format[0]), (590,85))
+                surface.blit(timelist.get(time_format[0]), (580,85))
                 surface.blit(timelist.get(time_format[1]), (610,85))
                 surface.blit(timelist.get(time_format[2]), (640,85))
                 surface.blit(timelist.get(time_format[3]), (660,85))
@@ -1766,7 +1766,7 @@ def main(flip):
                 surface.blit(timelist.get(time_format[2]), (660,335))
                 surface.blit(timelist.get(time_format[3]), (690,335))
             else:
-                surface.blit(timelist.get(time_format[0]), (590,335))
+                surface.blit(timelist.get(time_format[0]), (580,335))
                 surface.blit(timelist.get(time_format[1]), (610,335))
                 surface.blit(timelist.get(time_format[2]), (640,335))
                 surface.blit(timelist.get(time_format[3]), (660,335))
@@ -1778,12 +1778,6 @@ def main(flip):
         #pygame.display.flip()
         pygame.display.update()
         
-        '''if check==1 and play==1:
-            playsound('C:/Users/babai/Desktop/chess_sounds/CHECK_MED_SHORT.wav')#has to get shorter           
-        elif encounter==1 and play==1:
-            playsound('C:/Users/babai/Desktop/chess_sounds/ELECTRIC_POP_2.wav')#has to get shorter 
-        elif play==1:
-            playsound('C:/Users/babai/Desktop/chess_sounds/POP.wav')'''
             
             
     pygame.quit()
